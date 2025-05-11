@@ -20,15 +20,22 @@ public class VehicleContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite($"Data Source={DbPath}");
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Configure the Id column as an auto-incrementing primary key
+        modelBuilder.Entity<Vehicle>()
+            .Property(v => v.Id)
+            .ValueGeneratedOnAdd(); // Ensure auto-increment behavior
+    }
 }
 
 [Index(nameof(Vin), nameof(DealerId), nameof(ModifiedDate), IsUnique = true)]
 public class Vehicle
 {
-    public int Id { get; set; } // Primary Key
-
     [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Ensure auto-increment
+    public int Id { get; set; } // Primary Key
 
     public required string Vin { get; set; }
     public required int DealerId { get; set; }
