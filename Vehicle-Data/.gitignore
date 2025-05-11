@@ -1,0 +1,96 @@
+# Build Folders (can be generated)
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+*.tlog
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Rider
+.idea/
+*.sln.iml
+
+# ASP.NET Scaffolding
+.scaffolding/
+
+# Packages
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# macOS files
+.DS_Store
+
+# Temporary files
+~$*
+*.tmp
+*.bak
+*.swp
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Coverage Results
+*.coverage
+*.coveragexml
+
+# Publish output
+publish/
+wwwroot/
+
+# Azure Web App publish settings
+*.PublishSettings
+
+# SQL Server files
+*.mdf
+*.ldf
+
+# Entity Framework
+*.jfm
+
+# StyleCop
+StyleCopReport.xml
+
+# File-based packages
+*.nupkg
+*.snupkg
+
+# Node.js dependencies
+node_modules/
+
+# Yarn
+.yarn/
+.yarnrc.yml
+
+# Environment variables
+.env
+.env.*
+
+# Local history for IDEs
+.localhistory/
+
+# Backup files
+*.bak
+*.old
+*.orig
+*.rej
