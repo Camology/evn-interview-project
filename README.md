@@ -3,7 +3,10 @@ If errors are returned these are logged as their own entries that you can correc
 
 To run: 
 
-```move to the inner Vehicle-Data/Vehicle-Data folder and run docker-compose up --build```
+move to the inner Vehicle-Data/Vehicle-Data folder and run 
+
+```docker-compose up --build```
+
 or if you don't have docker, building from terminal should work like such: 
 
 ```dotnet build && dotnet run```
