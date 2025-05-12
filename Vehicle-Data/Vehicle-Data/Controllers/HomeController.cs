@@ -89,7 +89,7 @@ public class HomeController : Controller
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError("Failed to fetch error vehicles: {StatusCode}", response.StatusCode);
-                return View(new List<ErrorVehicle>());
+                return View(new List<ErrorVehicleModel>());
             }
 
             var content = await response.Content.ReadAsStringAsync();
@@ -102,12 +102,21 @@ public class HomeController : Controller
             ViewBag.PageSize = pageSize;
             ViewBag.TotalRecords = result?.TotalItems ?? 0;
 
-            return View(result?.Items ?? new List<ErrorVehicle>());
+            // Map ErrorVehicle to ErrorVehicleModel
+            var errorVehicleModels = result?.Items.Select(ev => new ErrorVehicleModel
+            {
+                DealerId = ev.DealerId,
+                Vin = ev.Vin,
+                ErrorMessage = ev.ErrorText ?? "Unknown error",
+                ModifiedDate = ev.ModifiedDate.ToDateTime(TimeOnly.MinValue)
+            }) ?? new List<ErrorVehicleModel>();
+
+            return View(errorVehicleModels);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching error vehicles");
-            return View(new List<ErrorVehicle>());
+            return View(new List<ErrorVehicleModel>());
         }
     }
 

@@ -18,3 +18,11 @@ public class ErrorVehicle
     public string? ErrorCode { get; set; }
     public string? ErrorText { get; set; }
 }
+
+public class ErrorVehicleModel
+{
+    public int DealerId { get; set; }
+    public string Vin { get; set; }
+    public string ErrorMessage { get; set; }
+    public DateTime ModifiedDate { get; set; }
+}

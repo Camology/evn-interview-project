@@ -11,30 +11,35 @@
 }
 
 <div class="container mt-4">
-    <h2>Vehicle Table</h2>
-    
-    <div class="row mb-3">
+    <div class="row mb-4">
         <div class="col">
+            <h2>Vehicle Table</h2>
+            <p class="text-muted">A list of all vehicles in the system including their VIN, make, model, and year.</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
             <form method="get" class="form-inline">
-                <div class="form-group mr-2">
+                <div class="form-group mx-sm-3 mb-2">
                     <label for="dealerId" class="mr-2">Dealer ID:</label>
                     <input type="number" class="form-control" id="dealerId" name="dealerId" value="@dealerId">
                 </div>
-                <div class="form-group mr-2">
+                <div class="form-group mx-sm-3 mb-2">
                     <label for="modifiedDate" class="mr-2">Modified Date:</label>
                     <input type="date" class="form-control" id="modifiedDate" name="modifiedDate" value="@(modifiedDate?.ToString("yyyy-MM-dd"))">
                 </div>
-                <button type="submit" class="btn btn-primary">Filter</button>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
             </form>
         </div>
-        <div class="col-auto">
-            <button type="button" class="btn btn-success" onclick="importVehicles()">Import Vehicles</button>
-            <button type="button" class="btn btn-info" onclick="augmentVehicles()">Augment Vehicles</button>
+        <div class="col-md-4 text-right">
+            <button type="button" onclick="importVehicles()" class="btn btn-secondary">Import Vehicles</button>
+            <button type="button" onclick="augmentVehicles()" class="btn btn-info">Augment Vehicles</button>
         </div>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-striped">
+        <table class="table table-striped table-hover">
             <thead>
                 <tr>
                     <th>Dealer ID</th>
@@ -62,32 +67,33 @@
     </div>
 
     <div class="row">
-        <div class="col">
-            <nav>
-                <ul class="pagination">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="pageSize">Items per page:</label>
+                <select id="pageSize" class="form-control" onchange="changePageSize(this.value)" style="width: auto; display: inline-block;">
+                    <option value="10" selected="@(pageSize == 10)">10</option>
+                    <option value="25" selected="@(pageSize == 25)">25</option>
+                    <option value="50" selected="@(pageSize == 50)">50</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-end">
                     <li class="page-item @(pageNumber == 1 ? "disabled" : "")">
                         <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = pageNumber - 1, pageSize, dealerId, modifiedDate })">Previous</a>
                     </li>
-                    
                     @for (int i = 1; i <= totalPages; i++)
                     {
                         <li class="page-item @(i == pageNumber ? "active" : "")">
                             <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = i, pageSize, dealerId, modifiedDate })">@i</a>
                         </li>
                     }
-                    
                     <li class="page-item @(pageNumber == totalPages ? "disabled" : "")">
                         <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = pageNumber + 1, pageSize, dealerId, modifiedDate })">Next</a>
                     </li>
                 </ul>
             </nav>
-        </div>
-        <div class="col-auto">
-            <select class="form-control" onchange="changePageSize(this.value)">
-                <option value="10" selected="@(pageSize == 10)">10 per page</option>
-                <option value="25" selected="@(pageSize == 25)">25 per page</option>
-                <option value="50" selected="@(pageSize == 50)">50 per page</option>
-            </select>
         </div>
     </div>
 </div>
@@ -122,9 +128,9 @@
 
             // Add a loading spinner
             cell.innerHTML = `
-                <div style="text-align: center;">
+                <div class="text-center p-3">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                        <span class="sr-only">Loading...</span>
                     </div>
                 </div>
             `;
@@ -141,7 +147,7 @@
                 // Filter out rows where Value is "N/A" or "Not Applicable"
                 const results = data.Results.filter(result => result.Value && result.Value !== 'N/A' && result.Value !== 'Not Applicable');
                 if (results.length === 0) {
-                    cell.innerHTML = '<p>No additional data available.</p>';
+                    cell.innerHTML = '<p class="text-center text-muted py-3">No additional data available.</p>';
                     return;
                 }
 
@@ -154,42 +160,41 @@
                     const startIndex = (currentPage - 1) * pageSize;
                     const paginatedResults = results.slice(startIndex, startIndex + pageSize);
 
-                    // Add empty rows if the last page has fewer than 5 rows
-                    const emptyRows = pageSize - paginatedResults.length;
-                    const emptyRowHtml = Array(emptyRows).fill(`
-                        <tr>
-                            <td colspan="2">&nbsp;</td>
-                        </tr>
-                    `).join('');
-
                     const subTable = `
-                        <table class="table table-bordered mt-2">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Entry</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${paginatedResults.map(result => `
+                        <div class="p-3">
+                            <table class="table table-sm">
+                                <thead>
                                     <tr>
-                                        <td>${result.Variable}</td>
-                                        <td>${result.Value}</td>
+                                        <th>Name</th>
+                                        <th>Entry</th>
                                     </tr>
-                                `).join('')}
-                                ${emptyRowHtml}
-                            </tbody>
-                        </table>
-                        <div class="pagination">
-                            <button class="btn btn-sm btn-primary" ${currentPage === 1 ? 'disabled' : ''} data-direction="-1">Previous</button>
-                            <span> Page ${currentPage} of ${Math.ceil(results.length / pageSize)} </span>
-                            <button class="btn btn-sm btn-primary" ${currentPage === Math.ceil(results.length / pageSize) ? 'disabled' : ''} data-direction="1">Next</button>
+                                </thead>
+                                <tbody>
+                                    ${paginatedResults.map(result => `
+                                        <tr>
+                                            <td>${result.Variable}</td>
+                                            <td>${result.Value}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <button class="btn btn-sm btn-outline-primary ${currentPage === 1 ? 'disabled' : ''}" 
+                                    data-direction="-1" ${currentPage === 1 ? 'disabled' : ''}>
+                                    Previous
+                                </button>
+                                <span class="text-muted">Page ${currentPage} of ${Math.ceil(results.length / pageSize)}</span>
+                                <button class="btn btn-sm btn-outline-primary ${currentPage === Math.ceil(results.length / pageSize) ? 'disabled' : ''}" 
+                                    data-direction="1" ${currentPage === Math.ceil(results.length / pageSize) ? 'disabled' : ''}>
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     `;
                     cell.innerHTML = subTable;
 
                     // Add event listeners for pagination buttons
-                    const buttons = cell.querySelectorAll('.pagination button');
+                    const buttons = cell.querySelectorAll('button[data-direction]');
                     buttons.forEach(button => {
                         button.addEventListener('click', (event) => {
                             const direction = parseInt(event.target.getAttribute('data-direction'));
@@ -208,7 +213,7 @@
                 renderSubTable();
             } catch (error) {
                 console.error("Error fetching data from API:", error);
-                cell.innerHTML = `<p>Error loading data: ${error.message}</p>`;
+                cell.innerHTML = `<p class="text-center text-danger py-3">Error loading data: ${error.message}</p>`;
             }
         }
 

@@ -1,9 +1,33 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome please choose what you'd like to see</data></h1>
-    <p><a class="btn btn-primary" href="/Home/Vehicle_Table">View Vehicle Table</a></p>
-    <p><a class="btn btn-primary" href="/Home/ErrorVehicle_Table">View Error Vehicle Table</a></p>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h2 class="text-center mb-4">Vehicle Data Management</h2>
+            <p class="text-center text-muted mb-5">Manage your vehicle data efficiently with our comprehensive tools.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Vehicle Table</h5>
+                    <p class="card-text">View and manage all vehicles in the system.</p>
+                    <a href="@Url.Action("Vehicle_Table")" class="btn btn-primary">View Vehicles</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Error Vehicle Table</h5>
+                    <p class="card-text">View and correct vehicles with processing errors.</p>
+                    <a href="@Url.Action("ErrorVehicle_Table")" class="btn btn-primary">View Error Vehicles</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
