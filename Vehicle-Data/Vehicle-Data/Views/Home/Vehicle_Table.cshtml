@@ -15,10 +15,10 @@
 <form method="get" action="/Home/Vehicle_Table">
     <div class="form-group">
         <label for="dealerId">Filter by Dealer ID:</label>
-        <input type="number" id="dealerId" name="dealerId" class="form-control" value="@dealerId" />
+        <input type="text" id="dealerId" name="dealerId" class="form-control" value="@dealerId" inputmode="numeric" />
     </div>
     <div class="form-group">
-        <label for="modifiedDate">Filter by Modified Date (YYYY-MM-DD):</label>
+        <label for="modifiedDate">Filter by Modified Date After:</label>
         <input type="date" id="modifiedDate" name="modifiedDate" class="form-control" value="@modifiedDate?.ToString("yyyy-MM-dd")" />
     </div>
     <div class="form-group">
@@ -39,7 +39,6 @@
             <th>Make</th>
             <th>Model</th>
             <th>Year</th>
-            <th>Color</th>
         </tr>
     </thead>
     <tbody>
@@ -53,7 +52,6 @@
                 <td>@vehicle.Make</td>
                 <td>@vehicle.Model</td>
                 <td>@vehicle.Year</td>
-                <td>@vehicle.Color</td>
             </tr>
         }
     </tbody>
