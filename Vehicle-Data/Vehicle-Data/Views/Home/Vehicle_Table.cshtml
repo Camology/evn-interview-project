@@ -1,4 +1,4 @@
-@model IEnumerable<Vehicle_Data.Models.Vehicle>
+@model IEnumerable<Vehicle_Data.Models.VehicleModel>
 
 @{
     ViewData["Title"] = "Vehicle Table";
@@ -10,202 +10,246 @@
     DateOnly? modifiedDate = ViewBag.ModifiedDate;
 }
 
-<h1>Vehicle Table</h1>
-
-<form method="get" action="/Home/Vehicle_Table">
-    <div class="form-group">
-        <label for="dealerId">Filter by Dealer ID:</label>
-        <input type="text" id="dealerId" name="dealerId" class="form-control" value="@dealerId" inputmode="numeric" />
+<div class="container mt-4">
+    <h2>Vehicle Table</h2>
+    
+    <div class="row mb-3">
+        <div class="col">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-2">
+                    <label for="dealerId" class="mr-2">Dealer ID:</label>
+                    <input type="number" class="form-control" id="dealerId" name="dealerId" value="@dealerId">
+                </div>
+                <div class="form-group mr-2">
+                    <label for="modifiedDate" class="mr-2">Modified Date:</label>
+                    <input type="date" class="form-control" id="modifiedDate" name="modifiedDate" value="@(modifiedDate?.ToString("yyyy-MM-dd"))">
+                </div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </form>
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-success" onclick="importVehicles()">Import Vehicles</button>
+            <button type="button" class="btn btn-info" onclick="augmentVehicles()">Augment Vehicles</button>
+        </div>
     </div>
-    <div class="form-group">
-        <label for="modifiedDate">Filter by Modified Date After:</label>
-        <input type="date" id="modifiedDate" name="modifiedDate" class="form-control" value="@modifiedDate?.ToString("yyyy-MM-dd")" />
-    </div>
-    <div class="form-group">
-        <label for="pageSize">Page Size:</label>
-        <input type="number" id="pageSize" name="pageSize" class="form-control" value="@pageSize" min="1" />
-    </div>
-    <button type="submit" class="btn btn-primary">Apply Filters</button>
-    <button type="button" class="btn btn-secondary" onclick="window.location.href='/Home/Vehicle_Table'">Clear All Filters</button>
-</form>
 
-<table class="table table-striped mt-4">
-    <thead>
-        <tr>
-            <th>VIN</th>
-            <th>Dealer ID</th>
-            <th>Modified Date</th>
-            <th>Make</th>
-            <th>Model</th>
-            <th>Year</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var vehicle in Model)
-        {
-            <tr onclick="toggleRowDetails(this, '@vehicle.Vin')" style="cursor: pointer;">
-                <td>@vehicle.Vin</td>
-                <td>@vehicle.DealerId</td>
-                <td>@vehicle.ModifiedDate</td>
-                <td>@vehicle.Make</td>
-                <td>@vehicle.Model</td>
-                <td>@vehicle.Year</td>
-            </tr>
-        }
-    </tbody>
-</table>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Dealer ID</th>
+                    <th>VIN</th>
+                    <th>Make</th>
+                    <th>Model</th>
+                    <th>Year</th>
+                    <th>Modified Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vehicle in Model)
+                {
+                    <tr onclick="toggleRowDetails(this, '@vehicle.Vin')" style="cursor: pointer;">
+                        <td>@vehicle.DealerId</td>
+                        <td>@vehicle.Vin</td>
+                        <td>@vehicle.Make</td>
+                        <td>@vehicle.Model</td>
+                        <td>@vehicle.Year</td>
+                        <td>@vehicle.ModifiedDate.ToString("yyyy-MM-dd")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 
-<div class="pagination">
-    <nav>
-        <ul class="pagination">
-            @if (pageNumber > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = pageNumber - 1, pageSize, dealerId, modifiedDate })">Previous</a>
-                </li>
-            }
-            @for (int i = 1; i <= totalPages; i++)
-            {
-                <li class="page-item @(i == pageNumber ? "active" : "")">
-                    <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = i, pageSize, dealerId, modifiedDate })">@i</a>
-                </li>
-            }
-            @if (pageNumber < totalPages)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = pageNumber + 1, pageSize, dealerId, modifiedDate })">Next</a>
-                </li>
-            }
-        </ul>
-    </nav>
+    <div class="row">
+        <div class="col">
+            <nav>
+                <ul class="pagination">
+                    <li class="page-item @(pageNumber == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = pageNumber - 1, pageSize, dealerId, modifiedDate })">Previous</a>
+                    </li>
+                    
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == pageNumber ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = i, pageSize, dealerId, modifiedDate })">@i</a>
+                        </li>
+                    }
+                    
+                    <li class="page-item @(pageNumber == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = pageNumber + 1, pageSize, dealerId, modifiedDate })">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <select class="form-control" onchange="changePageSize(this.value)">
+                <option value="10" selected="@(pageSize == 10)">10 per page</option>
+                <option value="25" selected="@(pageSize == 25)">25 per page</option>
+                <option value="50" selected="@(pageSize == 50)">50 per page</option>
+            </select>
+        </div>
+    </div>
 </div>
 
-<script>
-    let currentlyExpandedRow = null; // Track the currently expanded row
+@section Scripts {
+    <script>
+        let currentlyExpandedRow = null;
 
-    async function toggleRowDetails(row, vin) {
-        console.log(`Row clicked for VIN: ${vin}`); // Debugging log
-
-        // Close the currently expanded row if it's not the same as the clicked row
-        if (currentlyExpandedRow && currentlyExpandedRow !== row) {
-            const previousDetailsRow = currentlyExpandedRow.nextElementSibling;
-            if (previousDetailsRow && previousDetailsRow.classList.contains('details-row')) {
-                console.log("Closing previously expanded row."); // Debugging log
-                previousDetailsRow.remove();
+        async function toggleRowDetails(row, vin) {
+            // Close the currently expanded row if it's not the same as the clicked row
+            if (currentlyExpandedRow && currentlyExpandedRow !== row) {
+                const previousDetailsRow = currentlyExpandedRow.nextElementSibling;
+                if (previousDetailsRow && previousDetailsRow.classList.contains('details-row')) {
+                    previousDetailsRow.remove();
+                }
+                currentlyExpandedRow = null;
             }
-            currentlyExpandedRow = null;
-        }
 
-        // Check if the clicked row is already expanded
-        const detailsRow = row.nextElementSibling;
-        if (detailsRow && detailsRow.classList.contains('details-row')) {
-            console.log("Toggling visibility of existing details row."); // Debugging log
-            detailsRow.remove();
-            currentlyExpandedRow = null;
-            return;
-        }
-
-        console.log("Creating a new details row."); // Debugging log
-
-        // Create a new details row
-        const newRow = document.createElement('tr');
-        newRow.classList.add('details-row');
-        const cell = document.createElement('td');
-        cell.colSpan = row.children.length;
-
-        // Add a loading spinner
-        cell.innerHTML = `
-            <div style="text-align: center;">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        `;
-        newRow.appendChild(cell);
-        row.parentNode.insertBefore(newRow, row.nextSibling);
-
-        currentlyExpandedRow = row; // Set the currently expanded row
-
-        try {
-            console.log(`Fetching data from API for VIN: ${vin}`); // Debugging log
-
-            // Fetch data from the NHTSA API
-            const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
-            const data = await response.json();
-
-            // Filter out rows where Value is "N/A" or "Not Applicable"
-            const results = data.Results.filter(result => result.Value && result.Value !== 'N/A' && result.Value !== 'Not Applicable');
-            if (results.length === 0) {
-                cell.innerHTML = '<p>No additional data available.</p>';
+            // Check if the clicked row is already expanded
+            const detailsRow = row.nextElementSibling;
+            if (detailsRow && detailsRow.classList.contains('details-row')) {
+                detailsRow.remove();
+                currentlyExpandedRow = null;
                 return;
             }
 
-            console.log("Rendering subtable with API data."); // Debugging log
+            // Create a new details row
+            const newRow = document.createElement('tr');
+            newRow.classList.add('details-row');
+            const cell = document.createElement('td');
+            cell.colSpan = row.children.length;
 
-            // Pagination variables
-            const pageSize = 5;
-            let currentPage = 1;
-
-            // Function to render the subtable with pagination
-            function renderSubTable() {
-                const startIndex = (currentPage - 1) * pageSize;
-                const paginatedResults = results.slice(startIndex, startIndex + pageSize);
-
-                // Add empty rows if the last page has fewer than 5 rows
-                const emptyRows = pageSize - paginatedResults.length;
-                const emptyRowHtml = Array(emptyRows).fill(`
-                    <tr>
-                        <td colspan="2">&nbsp;</td>
-                    </tr>
-                `).join('');
-
-                const subTable = `
-                    <table class="table table-bordered mt-2">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Entry</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${paginatedResults.map(result => `
-                                <tr>
-                                    <td>${result.Variable}</td>
-                                    <td>${result.Value}</td>
-                                </tr>
-                            `).join('')}
-                            ${emptyRowHtml} <!-- Add empty rows here -->
-                        </tbody>
-                    </table>
-                    <div class="pagination">
-                        <button class="btn btn-sm btn-primary" ${currentPage === 1 ? 'disabled' : ''} data-direction="-1">Previous</button>
-                        <span> Page ${currentPage} of ${Math.ceil(results.length / pageSize)} </span>
-                        <button class="btn btn-sm btn-primary" ${currentPage === Math.ceil(results.length / pageSize) ? 'disabled' : ''} data-direction="1">Next</button>
+            // Add a loading spinner
+            cell.innerHTML = `
+                <div style="text-align: center;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                `;
-                cell.innerHTML = subTable;
+                </div>
+            `;
+            newRow.appendChild(cell);
+            row.parentNode.insertBefore(newRow, row.nextSibling);
 
-                // Add event listeners for pagination buttons
-                const buttons = cell.querySelectorAll('.pagination button');
-                buttons.forEach(button => {
-                    button.addEventListener('click', (event) => {
-                        const direction = parseInt(event.target.getAttribute('data-direction'));
-                        changePage(direction);
+            currentlyExpandedRow = row;
+
+            try {
+                // Fetch data from the NHTSA API
+                const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+                const data = await response.json();
+
+                // Filter out rows where Value is "N/A" or "Not Applicable"
+                const results = data.Results.filter(result => result.Value && result.Value !== 'N/A' && result.Value !== 'Not Applicable');
+                if (results.length === 0) {
+                    cell.innerHTML = '<p>No additional data available.</p>';
+                    return;
+                }
+
+                // Pagination variables
+                const pageSize = 5;
+                let currentPage = 1;
+
+                // Function to render the subtable with pagination
+                function renderSubTable() {
+                    const startIndex = (currentPage - 1) * pageSize;
+                    const paginatedResults = results.slice(startIndex, startIndex + pageSize);
+
+                    // Add empty rows if the last page has fewer than 5 rows
+                    const emptyRows = pageSize - paginatedResults.length;
+                    const emptyRowHtml = Array(emptyRows).fill(`
+                        <tr>
+                            <td colspan="2">&nbsp;</td>
+                        </tr>
+                    `).join('');
+
+                    const subTable = `
+                        <table class="table table-bordered mt-2">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Entry</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${paginatedResults.map(result => `
+                                    <tr>
+                                        <td>${result.Variable}</td>
+                                        <td>${result.Value}</td>
+                                    </tr>
+                                `).join('')}
+                                ${emptyRowHtml}
+                            </tbody>
+                        </table>
+                        <div class="pagination">
+                            <button class="btn btn-sm btn-primary" ${currentPage === 1 ? 'disabled' : ''} data-direction="-1">Previous</button>
+                            <span> Page ${currentPage} of ${Math.ceil(results.length / pageSize)} </span>
+                            <button class="btn btn-sm btn-primary" ${currentPage === Math.ceil(results.length / pageSize) ? 'disabled' : ''} data-direction="1">Next</button>
+                        </div>
+                    `;
+                    cell.innerHTML = subTable;
+
+                    // Add event listeners for pagination buttons
+                    const buttons = cell.querySelectorAll('.pagination button');
+                    buttons.forEach(button => {
+                        button.addEventListener('click', (event) => {
+                            const direction = parseInt(event.target.getAttribute('data-direction'));
+                            changePage(direction);
+                        });
                     });
+                }
+
+                // Function to handle page changes
+                function changePage(direction) {
+                    currentPage += direction;
+                    renderSubTable();
+                }
+
+                // Render the initial subtable
+                renderSubTable();
+            } catch (error) {
+                console.error("Error fetching data from API:", error);
+                cell.innerHTML = `<p>Error loading data: ${error.message}</p>`;
+            }
+        }
+
+        function changePageSize(size) {
+            window.location.href = '@Url.Action("Vehicle_Table")' + 
+                '?pageNumber=1' +
+                '&pageSize=' + size +
+                '&dealerId=@dealerId' +
+                '&modifiedDate=@(modifiedDate?.ToString("yyyy-MM-dd"))';
+        }
+
+        function importVehicles() {
+            if (confirm('Are you sure you want to import vehicles from the CSV file?')) {
+                fetch('/api/vehicle/import', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Import completed: ' + data.message);
+                    location.reload();
+                })
+                .catch(error => {
+                    alert('Error importing vehicles: ' + error);
                 });
             }
-
-            // Function to handle page changes
-            function changePage(direction) {
-                currentPage += direction;
-                renderSubTable();
-            }
-
-            // Render the initial subtable
-            renderSubTable();
-        } catch (error) {
-            console.error("Error fetching data from API:", error); // Debugging log
-            cell.innerHTML = `<p>Error loading data: ${error.message}</p>`;
         }
-    }
-</script>
+
+        function augmentVehicles() {
+            if (confirm('Are you sure you want to augment vehicle data from the NHTSA API?')) {
+                fetch('/api/vehicle/augment', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Augmentation completed: ' + data.message);
+                    location.reload();
+                })
+                .catch(error => {
+                    alert('Error augmenting vehicles: ' + error);
+                });
+            }
+        }
+    </script>
+}

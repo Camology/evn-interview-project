@@ -7,7 +7,6 @@ using Newtonsoft.Json.Linq;
 namespace Vehicle_Data {
     public static class InitializeDb {
         public static async Task Initialize(AppDbContext db) {
-            Console.WriteLine($"Database path: {db.DbPath}.");
             Console.WriteLine("Checking for existing data...");
 
             var projectDirectory = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.Parent?.Parent?.FullName;
@@ -27,7 +26,7 @@ namespace Vehicle_Data {
 
                 foreach (var vehicleCsv in vehicles) {
                     if (!db.Vehicles.Any(v => v.Vin == vehicleCsv.vin)) {
-                        db.Vehicles.Add(new Vehicle {
+                        db.Vehicles.Add(new VehicleModel {
                             DealerId = vehicleCsv.dealerId,
                             Vin = vehicleCsv.vin,
                             ModifiedDate = DateOnly.Parse(vehicleCsv.modifiedDate),
@@ -70,13 +69,19 @@ namespace Vehicle_Data {
 
                         db.Vehicles.Remove(vehicle);
 
-                        db.ErrorVehicles.Add(new ErrorVehicle {
-                            Vin = vehicle.Vin,
-                            DealerId = vehicle.DealerId,
-                            ModifiedDate = vehicle.ModifiedDate,
-                            ErrorCode = errorCode,
-                            ErrorText = errorText
-                        });
+                        if (!db.ErrorVehicles.Any(ev =>
+                            ev.Vin == vehicle.Vin &&
+                            ev.DealerId == vehicle.DealerId &&
+                            ev.ModifiedDate == vehicle.ModifiedDate))
+                        {
+                            db.ErrorVehicles.Add(new ErrorVehicle {
+                                Vin = vehicle.Vin,
+                                DealerId = vehicle.DealerId,
+                                ModifiedDate = vehicle.ModifiedDate,
+                                ErrorCode = errorCode,
+                                ErrorText = errorText
+                            });
+                        }
 
                         continue;
                     }

@@ -5,33 +5,8 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-public class VehicleContext : DbContext
-{
-    public DbSet<Vehicle> Vehicles { get; set; }
-
-    public string DbPath { get; }
-
-    public VehicleContext()
-    {
-        var folder = Environment.SpecialFolder.LocalApplicationData;
-        var path = Environment.GetFolderPath(folder);
-        DbPath = System.IO.Path.Join(path, "vehicles.db");
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder options)
-        => options.UseSqlite($"Data Source={DbPath}");
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        // Configure the Id column as an auto-incrementing primary key
-        modelBuilder.Entity<Vehicle>()
-            .Property(v => v.Id)
-            .ValueGeneratedOnAdd(); // Ensure auto-increment behavior
-    }
-}
-
 [Index(nameof(Vin), nameof(DealerId), nameof(ModifiedDate), IsUnique = true)]
-public class Vehicle
+public class VehicleModel
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Ensure auto-increment

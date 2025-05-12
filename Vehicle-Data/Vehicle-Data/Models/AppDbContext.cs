@@ -5,7 +5,7 @@ using System;
 
 public class AppDbContext : DbContext
 {
-    public DbSet<Vehicle> Vehicles { get; set; }
+    public DbSet<VehicleModel> Vehicles { get; set; }
     public DbSet<ErrorVehicle> ErrorVehicles { get; set; }
 
     public string DbPath { get; }
@@ -23,7 +23,7 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Configure the Id column as an auto-incrementing primary key for Vehicles
-        modelBuilder.Entity<Vehicle>()
+        modelBuilder.Entity<VehicleModel>()
             .Property(v => v.Id)
             .ValueGeneratedOnAdd();
 
@@ -33,7 +33,7 @@ public class AppDbContext : DbContext
             .ValueGeneratedOnAdd();
 
         // Add unique constraints for both tables
-        modelBuilder.Entity<Vehicle>()
+        modelBuilder.Entity<VehicleModel>()
             .HasIndex(v => new { v.Vin, v.DealerId, v.ModifiedDate })
             .IsUnique();
 
