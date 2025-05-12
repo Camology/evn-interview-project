@@ -1,0 +1,62 @@
+@model IEnumerable<Vehicle_Data.Models.ErrorVehicle>
+
+@{
+    ViewData["Title"] = "Error Vehicle Table";
+    int pageNumber = ViewBag.PageNumber ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalRecords = ViewBag.TotalRecords ?? 0;
+    int totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+    int? dealerId = ViewBag.DealerId;
+    DateOnly? modifiedDate = ViewBag.ModifiedDate;
+}
+
+<h1>Error Vehicle Table</h1>
+
+<table class="table table-striped mt-4">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>VIN</th>
+            <th>Dealer ID</th>
+            <th>ErrorCode</th>
+            <th>ErrorText</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var errorVehicle in Model)
+        {
+            <tr onclick="toggleRowDetails(this, '@errorVehicle.Vin')" style="cursor: pointer;">
+                <td>@errorVehicle.Id</td>
+                <td>@errorVehicle.Vin</td>
+                <td>@errorVehicle.DealerId</td>
+                <td>@errorVehicle.ErrorCode</td>
+                <td>@errorVehicle.ErrorText</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="pagination">
+    <nav>
+        <ul class="pagination">
+            @if (pageNumber > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = pageNumber - 1, pageSize, dealerId, modifiedDate })">Previous</a>
+                </li>
+            }
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == pageNumber ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = i, pageSize, dealerId, modifiedDate })">@i</a>
+                </li>
+            }
+            @if (pageNumber < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = pageNumber + 1, pageSize, dealerId, modifiedDate })">Next</a>
+                </li>
+            }
+        </ul>
+    </nav>
+</div>

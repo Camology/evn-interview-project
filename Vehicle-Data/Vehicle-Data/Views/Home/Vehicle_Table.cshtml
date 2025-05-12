@@ -44,7 +44,7 @@
     <tbody>
         @foreach (var vehicle in Model)
         {
-            <tr>
+            <tr onclick="toggleRowDetails(this, '@vehicle.Vin')" style="cursor: pointer;">
                 <td>@vehicle.Id</td>
                 <td>@vehicle.Vin</td>
                 <td>@vehicle.DealerId</td>
@@ -81,3 +81,133 @@
         </ul>
     </nav>
 </div>
+
+<script>
+    let currentlyExpandedRow = null; // Track the currently expanded row
+
+    async function toggleRowDetails(row, vin) {
+        console.log(`Row clicked for VIN: ${vin}`); // Debugging log
+
+        // Close the currently expanded row if it's not the same as the clicked row
+        if (currentlyExpandedRow && currentlyExpandedRow !== row) {
+            const previousDetailsRow = currentlyExpandedRow.nextElementSibling;
+            if (previousDetailsRow && previousDetailsRow.classList.contains('details-row')) {
+                console.log("Closing previously expanded row."); // Debugging log
+                previousDetailsRow.remove();
+            }
+            currentlyExpandedRow = null;
+        }
+
+        // Check if the clicked row is already expanded
+        const detailsRow = row.nextElementSibling;
+        if (detailsRow && detailsRow.classList.contains('details-row')) {
+            console.log("Toggling visibility of existing details row."); // Debugging log
+            detailsRow.remove();
+            currentlyExpandedRow = null;
+            return;
+        }
+
+        console.log("Creating a new details row."); // Debugging log
+
+        // Create a new details row
+        const newRow = document.createElement('tr');
+        newRow.classList.add('details-row');
+        const cell = document.createElement('td');
+        cell.colSpan = row.children.length;
+
+        // Add a loading spinner
+        cell.innerHTML = `
+            <div style="text-align: center;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+        newRow.appendChild(cell);
+        row.parentNode.insertBefore(newRow, row.nextSibling);
+
+        currentlyExpandedRow = row; // Set the currently expanded row
+
+        try {
+            console.log(`Fetching data from API for VIN: ${vin}`); // Debugging log
+
+            // Fetch data from the NHTSA API
+            const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+            const data = await response.json();
+
+            // Filter out rows where Value is "N/A" or "Not Applicable"
+            const results = data.Results.filter(result => result.Value && result.Value !== 'N/A' && result.Value !== 'Not Applicable');
+            if (results.length === 0) {
+                cell.innerHTML = '<p>No additional data available.</p>';
+                return;
+            }
+
+            console.log("Rendering subtable with API data."); // Debugging log
+
+            // Pagination variables
+            const pageSize = 5;
+            let currentPage = 1;
+
+            // Function to render the subtable with pagination
+            function renderSubTable() {
+                const startIndex = (currentPage - 1) * pageSize;
+                const paginatedResults = results.slice(startIndex, startIndex + pageSize);
+
+                // Add empty rows if the last page has fewer than 5 rows
+                const emptyRows = pageSize - paginatedResults.length;
+                const emptyRowHtml = Array(emptyRows).fill(`
+                    <tr>
+                        <td colspan="2">&nbsp;</td>
+                    </tr>
+                `).join('');
+
+                const subTable = `
+                    <table class="table table-bordered mt-2">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Entry</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${paginatedResults.map(result => `
+                                <tr>
+                                    <td>${result.Variable}</td>
+                                    <td>${result.Value}</td>
+                                </tr>
+                            `).join('')}
+                            ${emptyRowHtml} <!-- Add empty rows here -->
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        <button class="btn btn-sm btn-primary" ${currentPage === 1 ? 'disabled' : ''} data-direction="-1">Previous</button>
+                        <span> Page ${currentPage} of ${Math.ceil(results.length / pageSize)} </span>
+                        <button class="btn btn-sm btn-primary" ${currentPage === Math.ceil(results.length / pageSize) ? 'disabled' : ''} data-direction="1">Next</button>
+                    </div>
+                `;
+                cell.innerHTML = subTable;
+
+                // Add event listeners for pagination buttons
+                const buttons = cell.querySelectorAll('.pagination button');
+                buttons.forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const direction = parseInt(event.target.getAttribute('data-direction'));
+                        changePage(direction);
+                    });
+                });
+            }
+
+            // Function to handle page changes
+            function changePage(direction) {
+                currentPage += direction;
+                renderSubTable();
+            }
+
+            // Render the initial subtable
+            renderSubTable();
+        } catch (error) {
+            console.error("Error fetching data from API:", error); // Debugging log
+            cell.innerHTML = `<p>Error loading data: ${error.message}</p>`;
+        }
+    }
+</script>

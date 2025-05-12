@@ -6,8 +6,9 @@ using Newtonsoft.Json.Linq;
 
 namespace Vehicle_Data {
     public static class InitializeDb {
-        public static async Task Initialize(VehicleContext db) {
+        public static async Task Initialize(VehicleContext db, ErrorVehicleContext errorDb) {
             Console.WriteLine($"Database path: {db.DbPath}.");
+            Console.WriteLine($"Error database path: {errorDb.DbPath}.");
             Console.WriteLine("Checking for existing data...");
 
             // Adjust the path to locate the initial_data folder relative to the project directory
@@ -48,10 +49,10 @@ namespace Vehicle_Data {
             }
 
             // Update database rows with data from the NHTSA API
-            await UpdateVehicleDataFromApi(db);
+            await UpdateVehicleDataFromApi(db, errorDb);
         }
 
-        private static async Task UpdateVehicleDataFromApi(VehicleContext db) {
+        private static async Task UpdateVehicleDataFromApi(VehicleContext db, ErrorVehicleContext errorDb) {
             Console.WriteLine("Updating vehicle data from NHTSA API...");
             using var httpClient = new HttpClient();
 
@@ -63,9 +64,32 @@ namespace Vehicle_Data {
                 try {
                     var response = await httpClient.GetStringAsync(apiUrl);
                     var json = JObject.Parse(response);
+                    var results = json["Results"];
+
+                    // Check for an error code in the API response
+                    var errorCode = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Error Code")?["Value"]?.ToString();
+                    var errorText = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Error Text")?["Value"]?.ToString();
+
+                    if (!string.IsNullOrEmpty(errorCode) && errorCode != "0" && errorText != "1 - Check Digit (9th position) does not calculate properly") {
+                        // Log the error
+                        Console.WriteLine($"Error for VIN {vehicle.Vin}: Code={errorCode}, Text={errorText}");
+
+                        // Remove the vehicle from the Vehicles table
+                        db.Vehicles.Remove(vehicle);
+
+                        // Add the vehicle to the ErrorVehicle table using ErrorVehicleContext
+                        errorDb.VehicleErrors.Add(new ErrorVehicle {
+                            Vin = vehicle.Vin,
+                            DealerId = vehicle.DealerId,
+                            ModifiedDate = vehicle.ModifiedDate,
+                            ErrorCode = errorCode,
+                            ErrorText = errorText
+                        });
+
+                        continue; // Skip further processing for this vehicle
+                    }
 
                     // Extract "Make", "Model", and "Year" from the API response
-                    var results = json["Results"];
                     vehicle.Make = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Make")?["Value"]?.ToString();
                     vehicle.Model = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Model")?["Value"]?.ToString();
                     var yearString = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Model Year")?["Value"]?.ToString();
@@ -79,6 +103,7 @@ namespace Vehicle_Data {
             }
 
             await db.SaveChangesAsync();
+            await errorDb.SaveChangesAsync(); // Save changes to the ErrorVehicle database
             Console.WriteLine("Vehicle data updated from NHTSA API.");
         }
     }

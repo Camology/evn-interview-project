@@ -8,11 +8,13 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
     private readonly VehicleContext _context;
+    private readonly ErrorVehicleContext _errorContext;
 
-    public HomeController(ILogger<HomeController> logger, VehicleContext context)
+    public HomeController(ILogger<HomeController> logger, VehicleContext context, ErrorVehicleContext errorContext)
     {
         _logger = logger;
         _context = context;
+        _errorContext = errorContext;
     }
 
     public IActionResult Index()
@@ -54,6 +56,21 @@ public class HomeController : Controller
         ViewBag.ModifiedDate = modifiedDate;
 
         return View(vehicles);
+    }
+
+    public IActionResult ErrorVehicle_Table(int pageNumber = 1, int pageSize = 10)
+    {
+        var totalRecords = _errorContext.VehicleErrors.Count();
+        var errorVehicles = _errorContext.VehicleErrors
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        ViewBag.PageNumber = pageNumber;
+        ViewBag.PageSize = pageSize;
+        ViewBag.TotalRecords = totalRecords;
+
+        return View(errorVehicles);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
