@@ -1,0 +1,85 @@
+@model IEnumerable<Vehicle_Data.Models.Vehicle>
+
+@{
+    ViewData["Title"] = "Vehicle Table";
+    int pageNumber = ViewBag.PageNumber ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalRecords = ViewBag.TotalRecords ?? 0;
+    int totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+    int? dealerId = ViewBag.DealerId;
+    DateOnly? modifiedDate = ViewBag.ModifiedDate;
+}
+
+<h1>Vehicle Table</h1>
+
+<form method="get" action="/Home/Vehicle_Table">
+    <div class="form-group">
+        <label for="dealerId">Filter by Dealer ID:</label>
+        <input type="number" id="dealerId" name="dealerId" class="form-control" value="@dealerId" />
+    </div>
+    <div class="form-group">
+        <label for="modifiedDate">Filter by Modified Date (YYYY-MM-DD):</label>
+        <input type="date" id="modifiedDate" name="modifiedDate" class="form-control" value="@modifiedDate?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="form-group">
+        <label for="pageSize">Page Size:</label>
+        <input type="number" id="pageSize" name="pageSize" class="form-control" value="@pageSize" min="1" />
+    </div>
+    <button type="submit" class="btn btn-primary">Apply Filters</button>
+    <button type="button" class="btn btn-secondary" onclick="window.location.href='/Home/Vehicle_Table'">Clear All Filters</button>
+</form>
+
+<table class="table table-striped mt-4">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>VIN</th>
+            <th>Dealer ID</th>
+            <th>Modified Date</th>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Year</th>
+            <th>Color</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var vehicle in Model)
+        {
+            <tr>
+                <td>@vehicle.Id</td>
+                <td>@vehicle.Vin</td>
+                <td>@vehicle.DealerId</td>
+                <td>@vehicle.ModifiedDate</td>
+                <td>@vehicle.Make</td>
+                <td>@vehicle.Model</td>
+                <td>@vehicle.Year</td>
+                <td>@vehicle.Color</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="pagination">
+    <nav>
+        <ul class="pagination">
+            @if (pageNumber > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = pageNumber - 1, pageSize, dealerId, modifiedDate })">Previous</a>
+                </li>
+            }
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == pageNumber ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = i, pageSize, dealerId, modifiedDate })">@i</a>
+                </li>
+            }
+            @if (pageNumber < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Vehicle_Table", new { pageNumber = pageNumber + 1, pageSize, dealerId, modifiedDate })">Next</a>
+                </li>
+            }
+        </ul>
+    </nav>
+</div>

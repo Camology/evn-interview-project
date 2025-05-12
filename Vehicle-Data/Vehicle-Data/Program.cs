@@ -16,14 +16,16 @@ using var db = new VehicleContext(); {
     Console.WriteLine("Database initialized.");
 }
 
-
-
 // Web application setup
 var builder = WebApplication.CreateBuilder(args);
+
+// Explicitly set the URLs for the application
+builder.WebHost.UseUrls("https://localhost:5001", "http://localhost:5000");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddDbContext<VehicleContext>();
 
 var app = builder.Build();
 
@@ -32,6 +34,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
 else
 {
