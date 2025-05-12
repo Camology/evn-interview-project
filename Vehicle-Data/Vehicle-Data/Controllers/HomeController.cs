@@ -37,7 +37,7 @@ public class HomeController : Controller
         try
         {
             var client = _httpClientFactory.CreateClient();
-            var baseUrl = _configuration["ApiBaseUrl"] ?? "https://localhost:5001";
+            var baseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:80";
             
             // Build query string for filters
             var queryParams = new List<string>();
@@ -82,7 +82,7 @@ public class HomeController : Controller
         try
         {
             var client = _httpClientFactory.CreateClient();
-            var baseUrl = _configuration["ApiBaseUrl"] ?? "https://localhost:5001";
+            var baseUrl = _configuration["ApiBaseUrl"] ?? "http://localhost:80";
             
             var response = await client.GetAsync($"{baseUrl}/api/vehicle/errors?pageNumber={pageNumber}&pageSize={pageSize}");
             

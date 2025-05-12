@@ -1,0 +1,16 @@
+services:
+  vehicle-data:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_HTTP_PORTS=80
+      - ApiBaseUrl=http://localhost:80
+    volumes:
+      - ./VehicleData.db:/app/VehicleData.db
+      - ./Data:/app/Data
+    restart: unless-stopped 

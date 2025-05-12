@@ -11,9 +11,6 @@ using Vehicle_Data.Models;
 // Web application setup
 var builder = WebApplication.CreateBuilder(args);
 
-// Explicitly set the URLs for the application
-builder.WebHost.UseUrls("https://localhost:5001", "http://localhost:5000");
-
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -25,11 +22,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddHttpClient();
-
-// Configure API base URL
-builder.Configuration["ApiBaseUrl"] = builder.Environment.IsDevelopment() 
-    ? "https://localhost:5001" 
-    : builder.Configuration["ApiBaseUrl"];
 
 var app = builder.Build();
 
@@ -46,7 +38,6 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
-    app.UseHttpsRedirection();
 }
 else
 {
@@ -54,8 +45,6 @@ else
     app.UseMigrationsEndPoint();
 }
 
-app.UseHttpsRedirection();
-app.UseWebSockets();
 app.UseStaticFiles();
 app.UseRouting();
 

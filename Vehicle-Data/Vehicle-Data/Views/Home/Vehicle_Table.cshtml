@@ -33,7 +33,7 @@
             </form>
         </div>
         <div class="col-md-4 text-right">
-            <button type="button" onclick="importVehicles()" class="btn btn-secondary">Import Vehicles</button>
+            <!-- <button type="button" onclick="importVehicles()" class="btn btn-secondary">Import Vehicles</button> -->
             <button type="button" onclick="augmentVehicles()" class="btn btn-info">Augment Vehicles</button>
         </div>
     </div>
@@ -230,13 +230,23 @@
                 fetch('/api/vehicle/import', {
                     method: 'POST'
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    alert('Import completed: ' + data.message);
+                    const message = `Import completed:\n` +
+                        `Total Processed: ${data.totalProcessed}\n` +
+                        `Successfully Imported: ${data.successfullyImported}\n` +
+                        `Errors: ${data.errors.length > 0 ? data.errors.join('\n') : 'None'}`;
+                    alert(message);
                     location.reload();
                 })
                 .catch(error => {
-                    alert('Error importing vehicles: ' + error);
+                    console.error('Error:', error);
+                    alert('Error importing vehicles: ' + error.message);
                 });
             }
         }

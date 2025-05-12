@@ -36,7 +36,7 @@
                         <td>@vehicle.ErrorMessage</td>
                         <td>@vehicle.ModifiedDate.ToString("yyyy-MM-dd")</td>
                         <td>
-                            <button type="button" onclick="event.stopPropagation(); openCorrectionModal('@vehicle.Vin')" 
+                            <button type="button" onclick="event.stopPropagation(); openCorrectionModal('@vehicle.Vin', '@vehicle.DealerId', '@vehicle.ModifiedDate.ToString("yyyy-MM-dd")')" 
                                     class="btn btn-sm btn-primary">
                                 Correct Error
                             </button>
@@ -104,6 +104,8 @@
     <script>
         let currentlyExpandedRow = null;
         let currentVin = null;
+        let currentDealerId = null;
+        let currentModifiedDate = null;
 
         function toggleErrorRowDetails(row, vin) {
             // Close the currently expanded row if it's not the same as the clicked row
@@ -175,8 +177,10 @@
                 '&pageSize=' + size;
         }
 
-        function openCorrectionModal(vin) {
+        function openCorrectionModal(vin, dealerId, modifiedDate) {
             currentVin = vin;
+            currentDealerId = dealerId;
+            currentModifiedDate = modifiedDate;
             const modal = new bootstrap.Modal(document.getElementById('correctionModal'));
             modal.show();
         }
@@ -188,6 +192,8 @@
             }
             document.getElementById('correctedVin').value = '';
             currentVin = null;
+            currentDealerId = null;
+            currentModifiedDate = null;
         }
 
         function submitCorrection() {
@@ -204,22 +210,25 @@
                 },
                 body: JSON.stringify({
                     originalVin: currentVin,
-                    correctedVin: correctedVin
+                    correctedVin: correctedVin,
+                    dealerId: currentDealerId,
+                    modifiedDate: currentModifiedDate
                 })
             })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert('VIN correction successful!');
-                    location.reload();
-                } else {
-                    alert(`Error: ${result.message}`);
-                    location.reload();
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Error processing correction');
+                    });
                 }
+                return response.json();
+            })
+            .then(result => {
+                alert('VIN correction successful!');
+                location.reload();
             })
             .catch(error => {
                 alert(`Error: ${error.message}`);
-                location.reload();
             });
         }
     </script>
