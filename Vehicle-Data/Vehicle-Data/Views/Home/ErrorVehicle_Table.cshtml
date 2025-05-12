@@ -6,8 +6,6 @@
     int pageSize = ViewBag.PageSize ?? 10;
     int totalRecords = ViewBag.TotalRecords ?? 0;
     int totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
-    int? dealerId = ViewBag.DealerId;
-    DateOnly? modifiedDate = ViewBag.ModifiedDate;
 }
 
 <h1>Error Vehicle Table</h1>
@@ -15,18 +13,16 @@
 <table class="table table-striped mt-4">
     <thead>
         <tr>
-            <th>Id</th>
             <th>VIN</th>
             <th>Dealer ID</th>
-            <th>ErrorCode</th>
-            <th>ErrorText</th>
+            <th>Error Code</th>
+            <th>Error Text</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var errorVehicle in Model)
         {
-            <tr onclick="toggleRowDetails(this, '@errorVehicle.Vin')" style="cursor: pointer;">
-                <td>@errorVehicle.Id</td>
+            <tr onclick="toggleErrorRowDetails(this, '@errorVehicle.Vin')" style="cursor: pointer;">
                 <td>@errorVehicle.Vin</td>
                 <td>@errorVehicle.DealerId</td>
                 <td>@errorVehicle.ErrorCode</td>
@@ -42,21 +38,151 @@
             @if (pageNumber > 1)
             {
                 <li class="page-item">
-                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = pageNumber - 1, pageSize, dealerId, modifiedDate })">Previous</a>
+                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = pageNumber - 1, pageSize })">Previous</a>
                 </li>
             }
             @for (int i = 1; i <= totalPages; i++)
             {
                 <li class="page-item @(i == pageNumber ? "active" : "")">
-                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = i, pageSize, dealerId, modifiedDate })">@i</a>
+                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = i, pageSize })">@i</a>
                 </li>
             }
             @if (pageNumber < totalPages)
             {
                 <li class="page-item">
-                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = pageNumber + 1, pageSize, dealerId, modifiedDate })">Next</a>
+                    <a class="page-link" href="@Url.Action("ErrorVehicle_Table", new { pageNumber = pageNumber + 1, pageSize })">Next</a>
                 </li>
             }
         </ul>
     </nav>
 </div>
+
+<script>
+    let currentlyExpandedErrorRow = null; // Track the currently expanded row
+
+    async function toggleErrorRowDetails(row, vin) {
+        console.log(`Row clicked for VIN: ${vin}`); // Debugging log
+
+        // Close the currently expanded row if it's not the same as the clicked row
+        if (currentlyExpandedErrorRow && currentlyExpandedErrorRow !== row) {
+            const previousDetailsRow = currentlyExpandedErrorRow.nextElementSibling;
+            if (previousDetailsRow && previousDetailsRow.classList.contains('details-row')) {
+                console.log("Closing previously expanded row."); // Debugging log
+                previousDetailsRow.remove();
+            }
+            currentlyExpandedErrorRow = null;
+        }
+
+        // Check if the clicked row is already expanded
+        const detailsRow = row.nextElementSibling;
+        if (detailsRow && detailsRow.classList.contains('details-row')) {
+            console.log("Toggling visibility of existing details row."); // Debugging log
+            detailsRow.remove();
+            currentlyExpandedErrorRow = null;
+            return;
+        }
+
+        console.log("Creating a new details row."); // Debugging log
+
+        // Create a new details row
+        const newRow = document.createElement('tr');
+        newRow.classList.add('details-row');
+        const cell = document.createElement('td');
+        cell.colSpan = row.children.length;
+
+        // Add a loading spinner
+        cell.innerHTML = `
+            <div style="text-align: center;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+        newRow.appendChild(cell);
+        row.parentNode.insertBefore(newRow, row.nextSibling);
+
+        currentlyExpandedErrorRow = row; // Set the currently expanded row
+
+        try {
+            console.log(`Fetching data from API for VIN: ${vin}`); // Debugging log
+
+            // Fetch data from the NHTSA API
+            const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
+            const data = await response.json();
+
+            // Filter out rows where Value is "N/A" or "Not Applicable"
+            const results = data.Results.filter(result => result.Value && result.Value !== 'N/A' && result.Value !== 'Not Applicable');
+            if (results.length === 0) {
+                cell.innerHTML = '<p>No additional data available.</p>';
+                return;
+            }
+
+            console.log("Rendering error details subtable."); // Debugging log
+
+            // Pagination variables
+            const pageSize = 5;
+            let currentPage = 1;
+
+            // Function to render the subtable with pagination
+            function renderSubTable() {
+                const startIndex = (currentPage - 1) * pageSize;
+                const paginatedResults = results.slice(startIndex, startIndex + pageSize);
+
+                // Add empty rows if the last page has fewer than 5 rows
+                const emptyRows = pageSize - paginatedResults.length;
+                const emptyRowHtml = Array(emptyRows).fill(`
+                    <tr>
+                        <td colspan="2">&nbsp;</td>
+                    </tr>
+                `).join('');
+
+                const subTable = `
+                    <table class="table table-bordered mt-2">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${paginatedResults.map(result => `
+                                <tr>
+                                    <td>${result.Variable}</td>
+                                    <td>${result.Value}</td>
+                                </tr>
+                            `).join('')}
+                            ${emptyRowHtml} <!-- Add empty rows here -->
+                        </tbody>
+                    </table>
+                    <div class="pagination">
+                        <button class="btn btn-sm btn-primary" ${currentPage === 1 ? 'disabled' : ''} data-direction="-1">Previous</button>
+                        <span> Page ${currentPage} of ${Math.ceil(results.length / pageSize)} </span>
+                        <button class="btn btn-sm btn-primary" ${currentPage === Math.ceil(results.length / pageSize) ? 'disabled' : ''} data-direction="1">Next</button>
+                    </div>
+                `;
+                cell.innerHTML = subTable;
+
+                // Add event listeners for pagination buttons
+                const buttons = cell.querySelectorAll('.pagination button');
+                buttons.forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const direction = parseInt(event.target.getAttribute('data-direction'));
+                        changePage(direction);
+                    });
+                });
+            }
+
+            // Function to handle page changes
+            function changePage(direction) {
+                currentPage += direction;
+                renderSubTable();
+            }
+
+            // Render the initial subtable
+            renderSubTable();
+        } catch (error) {
+            console.error("Error fetching data from API:", error); // Debugging log
+            cell.innerHTML = `<p>Error loading details: ${error.message}</p>`;
+        }
+    }
+</script>

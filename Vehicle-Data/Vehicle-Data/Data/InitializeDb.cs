@@ -6,12 +6,10 @@ using Newtonsoft.Json.Linq;
 
 namespace Vehicle_Data {
     public static class InitializeDb {
-        public static async Task Initialize(VehicleContext db, ErrorVehicleContext errorDb) {
+        public static async Task Initialize(AppDbContext db) {
             Console.WriteLine($"Database path: {db.DbPath}.");
-            Console.WriteLine($"Error database path: {errorDb.DbPath}.");
             Console.WriteLine("Checking for existing data...");
 
-            // Adjust the path to locate the initial_data folder relative to the project directory
             var projectDirectory = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent?.Parent?.Parent?.FullName;
             var csvFilePath = Path.Combine(projectDirectory ?? string.Empty, "Data", "sample-vin-data.csv");
 
@@ -28,13 +26,12 @@ namespace Vehicle_Data {
                 var vehicles = csv.GetRecords<VehicleCsv>().ToList();
 
                 foreach (var vehicleCsv in vehicles) {
-                    // Check if the vehicle already exists in the database
                     if (!db.Vehicles.Any(v => v.Vin == vehicleCsv.vin)) {
                         db.Vehicles.Add(new Vehicle {
                             DealerId = vehicleCsv.dealerId,
                             Vin = vehicleCsv.vin,
                             ModifiedDate = DateOnly.Parse(vehicleCsv.modifiedDate),
-                            Make = null, // Set default values for optional fields
+                            Make = null,
                             Model = null,
                             Year = null,
                         });
@@ -48,11 +45,10 @@ namespace Vehicle_Data {
                 Console.WriteLine("CSV file not found. Skipping data load.");
             }
 
-            // Update database rows with data from the NHTSA API
-            await UpdateVehicleDataFromApi(db, errorDb);
+            await UpdateVehicleDataFromApi(db);
         }
 
-        private static async Task UpdateVehicleDataFromApi(VehicleContext db, ErrorVehicleContext errorDb) {
+        private static async Task UpdateVehicleDataFromApi(AppDbContext db) {
             Console.WriteLine("Updating vehicle data from NHTSA API...");
             using var httpClient = new HttpClient();
 
@@ -66,19 +62,15 @@ namespace Vehicle_Data {
                     var json = JObject.Parse(response);
                     var results = json["Results"];
 
-                    // Check for an error code in the API response
                     var errorCode = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Error Code")?["Value"]?.ToString();
                     var errorText = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Error Text")?["Value"]?.ToString();
 
                     if (!string.IsNullOrEmpty(errorCode) && errorCode != "0" && errorText != "1 - Check Digit (9th position) does not calculate properly") {
-                        // Log the error
                         Console.WriteLine($"Error for VIN {vehicle.Vin}: Code={errorCode}, Text={errorText}");
 
-                        // Remove the vehicle from the Vehicles table
                         db.Vehicles.Remove(vehicle);
 
-                        // Add the vehicle to the ErrorVehicle table using ErrorVehicleContext
-                        errorDb.VehicleErrors.Add(new ErrorVehicle {
+                        db.ErrorVehicles.Add(new ErrorVehicle {
                             Vin = vehicle.Vin,
                             DealerId = vehicle.DealerId,
                             ModifiedDate = vehicle.ModifiedDate,
@@ -86,10 +78,9 @@ namespace Vehicle_Data {
                             ErrorText = errorText
                         });
 
-                        continue; // Skip further processing for this vehicle
+                        continue;
                     }
 
-                    // Extract "Make", "Model", and "Year" from the API response
                     vehicle.Make = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Make")?["Value"]?.ToString();
                     vehicle.Model = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Model")?["Value"]?.ToString();
                     var yearString = results?.FirstOrDefault(r => r["Variable"]?.ToString() == "Model Year")?["Value"]?.ToString();
@@ -103,7 +94,6 @@ namespace Vehicle_Data {
             }
 
             await db.SaveChangesAsync();
-            await errorDb.SaveChangesAsync(); // Save changes to the ErrorVehicle database
             Console.WriteLine("Vehicle data updated from NHTSA API.");
         }
     }

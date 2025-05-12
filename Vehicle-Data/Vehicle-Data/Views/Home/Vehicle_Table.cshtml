@@ -32,7 +32,6 @@
 <table class="table table-striped mt-4">
     <thead>
         <tr>
-            <th>Id</th>
             <th>VIN</th>
             <th>Dealer ID</th>
             <th>Modified Date</th>
@@ -45,7 +44,6 @@
         @foreach (var vehicle in Model)
         {
             <tr onclick="toggleRowDetails(this, '@vehicle.Vin')" style="cursor: pointer;">
-                <td>@vehicle.Id</td>
                 <td>@vehicle.Vin</td>
                 <td>@vehicle.DealerId</td>
                 <td>@vehicle.ModifiedDate</td>

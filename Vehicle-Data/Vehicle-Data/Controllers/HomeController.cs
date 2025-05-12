@@ -7,14 +7,12 @@ namespace Vehicle_Data.Controllers;
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
-    private readonly VehicleContext _context;
-    private readonly ErrorVehicleContext _errorContext;
+    private readonly AppDbContext _context;
 
-    public HomeController(ILogger<HomeController> logger, VehicleContext context, ErrorVehicleContext errorContext)
+    public HomeController(ILogger<HomeController> logger, AppDbContext context)
     {
         _logger = logger;
         _context = context;
-        _errorContext = errorContext;
     }
 
     public IActionResult Index()
@@ -60,8 +58,8 @@ public class HomeController : Controller
 
     public IActionResult ErrorVehicle_Table(int pageNumber = 1, int pageSize = 10)
     {
-        var totalRecords = _errorContext.VehicleErrors.Count();
-        var errorVehicles = _errorContext.VehicleErrors
+        var totalRecords = _context.ErrorVehicles.Count();
+        var errorVehicles = _context.ErrorVehicles
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToList();

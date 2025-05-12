@@ -9,14 +9,12 @@ using Vehicle_Data;
 using Vehicle_Data.Models;
 
 // Ensure the database is created
-using var vehicle_db = new VehicleContext();
-using var error_db = new ErrorVehicleContext();
+using var db = new AppDbContext();
 
 try {
     // This will create the database if it doesn't exist
-    vehicle_db.Database.EnsureCreated();
-    error_db.Database.EnsureCreated();
-    InitializeDb.Initialize(vehicle_db, error_db).Wait();
+    db.Database.EnsureCreated();
+    InitializeDb.Initialize(db).Wait();
     Console.WriteLine("Databases initialized.");
 }
 catch (Exception ex){
@@ -34,6 +32,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDbContext<VehicleContext>();
 builder.Services.AddDbContext<ErrorVehicleContext>();
+builder.Services.AddDbContext<AppDbContext>();
 
 var app = builder.Build();
 
